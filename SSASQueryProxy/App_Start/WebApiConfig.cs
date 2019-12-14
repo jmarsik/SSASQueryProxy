@@ -11,12 +11,17 @@ namespace SSASQueryProxy
         {
             // Web API configuration and services
 
+            // output full exception details to the calling client
+            // this is a simple proxy application, we have nothing to hide and it will be easier to debug things in this way
+            config.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
+
             // Web API routes
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
-                routeTemplate: "api/{controller}"
+                routeTemplate: "api/{controller}/{id}",
+                defaults: new { id = RouteParameter.Optional }
             );
 
             // map root URL to the one and only controller for query proxying
