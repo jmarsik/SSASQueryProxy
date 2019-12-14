@@ -34,7 +34,7 @@ namespace SSASQueryProxy.Controllers
             // https://weblog.west-wind.com/posts/2013/dec/13/accepting-raw-request-body-content-with-aspnet-web-api
             string query = Request.Content.ReadAsStringAsync().Result;
 
-            Trace.TraceInformation($"{Request.GetCorrelationId()} Got query request from IP {HttpContext.Current?.Request.UserHostAddress} for server {server}, database {db}, locale identifier {localeIdentifier}, application name {applicationName}, timeout {timeout} seconds, query {query?.Substring(0, 512)}");
+            Trace.TraceInformation($"{Request.GetCorrelationId()} Got query request from IP {HttpContext.Current?.Request.UserHostAddress} for server {server}, database {db}, locale identifier {localeIdentifier}, application name {applicationName}, timeout {timeout} seconds, query {query?.Substring(0, Math.Min(512, query?.Length ?? 0)) ?? "<empty>"}");
 
             // check identity presence (should be handled by SaveCredsBasicAuthentication filter)
             var identity = Request.GetRequestContext().Principal?.Identity as SaveCredsBasicAuthenticationIdentity;
