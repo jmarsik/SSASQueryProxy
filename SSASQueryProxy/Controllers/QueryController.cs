@@ -37,7 +37,8 @@ namespace SSASQueryProxy.Controllers
             Trace.TraceInformation($"{Request.GetCorrelationId()} Got query request from IP {HttpContext.Current?.Request.UserHostAddress} for server {server}, database {db}, locale identifier {localeIdentifier}, application name {applicationName}, timeout {timeout} seconds, query {query?.Substring(0, 512)}");
 
             // check identity presence (should be handled by SaveCredsBasicAuthentication filter)
-            if (!(Request.GetRequestContext().Principal?.Identity is SaveCredsBasicAuthenticationIdentity identity))
+            var identity = Request.GetRequestContext().Principal?.Identity as SaveCredsBasicAuthenticationIdentity;
+            if (identity == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Basic authentication credentials not found in request");
             }
