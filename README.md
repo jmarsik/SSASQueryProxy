@@ -14,7 +14,9 @@ You simply deploy it somewhere (Azure Web App, ordinary server, doesn't matter),
 
 Don't forget this:
 
-* set Configuration - General Settings - Platform to 64bit (ADOMD.NET SSAS client NuGet package is 64bit only)
+* you can use the lowest available App Service plan size (F1 - free tier)
+  * even this free tier allows you to use HTTPS, but only with URL provided by Azure, not with your custom domain ... which is perfectly fine for the proxy
+  * originally I thought that 64bit platform would be required (and that's not available in the free tier), but it looks like that the NuGet package with ADOMD.NET client only has "amd64" in its name, but in fact doesn't require 64bit platform ... proxy works even with 32bit platform
 * add item to Configuration - Application Settings named "allowedSsasServers" containing semicolon delimited list of allowed SSAS servers (could be also URLs to MSMDPUMP endpoints)
 * add item to Configuration - Application Settings named "SCM\_DO\_BUILD\_DURING\_DEPLOYMENT" containing "true" if you plan to perform deployment by ZIP deploy
 
@@ -33,7 +35,7 @@ Method: POST or GET (see below)
 Parameters:
 
 * server - server hostname or URL to MSMDPUMP endpoint
-* db - SSAS database named
+* db - SSAS database name
 * localeIdentifier - (optional, default 1029, which is English) locale identifier
 * applicationName - (optional, default SSASQueryProxy) application identifier to distinguish your application in SSAS traces
 * timeout (optional, default 120 seconds) connect timeout and also command timeout in seconds
@@ -55,7 +57,7 @@ Output:
 
 ### Usage in Power BI report / Power Query
 
-Use Web.Contents M language function, see https://docs.microsoft.com/en-us/powerquery-m/web-contents. Unfortunately there is another problem with this function (they are really trying to make this as hard as possible!). You CANNOT use the Content option to specify request body and convert the request to use the POST method IF you are using authentication. What?? You heard it right ... That's why SSASQueryProxy supports 2 methods of passing the MDX query - in the request body and also in query string parameter. And that's why I mention this little trick about Authorization header above ... because you can use it to trick Power BI into thinking that the request is not authenticated (and therefore use the Content option). Crazy right?
+Use Web.Contents M language function, see https://docs.microsoft.com/en-us/powerquery-m/web-contents. Unfortunately there is another problem with this function (they are really trying to make this as hard as possible!). You CANNOT use the Content option to specify request body and convert the request to use the POST method IF you are using authentication. What?? You heard it right ... That's why SSASQueryProxy supports 2 methods of passing the MDX query - in the request body and also in `query` URL parameter. And that's why I mention this little trick about Authorization header above ... because you can use it to trick Power BI into thinking that the request is not authenticated (and therefore use the Content option). Crazy right?
 
 The little trick has one disadvantage - you cannot use ordinary Power BI support for credentials, you have to store them in Power Query parameters or somewhere else.
 
@@ -82,7 +84,7 @@ Table.FromRecords(Json.Document(Web.Contents(
 )))
 ```
 
-And the other with ordinary Power BI Basic authentication working:
+And the other with ordinary Power BI Basic authentication working, but with limited maximum MDX query length:
 
 ```
 Table.FromRecords(Json.Document(Web.Contents(
@@ -102,7 +104,7 @@ Table.FromRecords(Json.Document(Web.Contents(
 
 ## Testing from command line
 
-While developing the proxy, you can test it from the command line using `curl`:
+While developing the proxy, you can test it from the command line with `curl`:
 
 ```
 curl.exe --insecure --user "USER:PASSWORD" --data-ascii "MDXQUERY" --verbose "https://localhost:44380/?server=SERVERorHTTPMSMDPUMPURL&db=DATABASE&localeIdentifier=1029&applicationName=SSASQueryProxyDEV&timeout=900"
