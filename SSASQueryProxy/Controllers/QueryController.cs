@@ -37,6 +37,7 @@ namespace SSASQueryProxy.Controllers
         }
 
         [SaveCredsBasicAuthentication]
+        [RequireHttps]
         [Authorize]
         [CustomExceptionFilter]
         [HttpGet]
