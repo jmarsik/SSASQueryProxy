@@ -17,7 +17,7 @@ Don't forget this:
 * you can use the lowest available App Service plan size (F1 - free tier)
   * even this free tier allows you to use HTTPS, but only with URL provided by Azure, not with your custom domain ... which is perfectly fine for the proxy
   * originally I thought that 64bit platform would be required (and that's not available in the free tier), but it looks like that the NuGet package with ADOMD.NET client only has "amd64" in its name, but in fact doesn't require 64bit platform ... proxy works even with 32bit platform
-* add item to Configuration - Application Settings named "allowedSsasServers" containing semicolon delimited list of allowed SSAS servers (could be also URLs to MSMDPUMP endpoints)
+* add item to Configuration - Application Settings named "allowedSsasServers" containing semicolon delimited list of allowed SSAS servers (probably URLs to MSMDPUMP endpoints)
 * add item to Configuration - Application Settings named "SCM\_DO\_BUILD\_DURING\_DEPLOYMENT" containing "true" if you plan to perform deployment by ZIP deploy
 
 You can use Git for deployment or you can just ZIP the repository content and upload it to ZIP deploy page in Azure Web App KUDU console. It's probably the easiest way.
@@ -34,7 +34,7 @@ Method: POST or GET (see below)
 
 Parameters:
 
-* server - server hostname or URL to MSMDPUMP endpoint
+* server - server hostname (probably an URL to MSMDPUMP endpoint)
 * db - SSAS database name
 * localeIdentifier - (optional, default 1029, which is English) locale identifier
 * applicationName - (optional, default SSASQueryProxy) application identifier to distinguish your application in SSAS traces
@@ -44,6 +44,7 @@ Credentials:
 
 * pass them with Basic authentication
 * or you can use a little trick - manually construct Authorization header with value "Basic XXX" where XXX is BASE64-encoded string "username:password"
+* SSAS only allows specifying username and password in the connection string for MSMDPUMP-based access, therefore if you want to pass authentication this way, you have to specify the server as an URL to MSMDPUMP endpoint; for direct connection the user under which the proxy is running will be used instead
 
 MDX query:
 
@@ -109,3 +110,21 @@ While developing the proxy, you can test it from the command line with `curl`:
 ```
 curl.exe --insecure --user "USER:PASSWORD" --data-ascii "MDXQUERY" --verbose "https://localhost:44380/?server=SERVERorHTTPMSMDPUMPURL&db=DATABASE&localeIdentifier=1029&applicationName=SSASQueryProxyDEV&timeout=900"
 ```
+
+## Troubleshooting
+
+When deploying under IIS you can see the tracing logs after adding this to `web.config` under the
+`configuration` element:
+
+```
+  <system.diagnostics>
+    <trace autoflush="true" indentsize="4">
+      <listeners>
+        <remove name="Default" />
+        <add name="Default" type="System.Diagnostics.TextWriterTraceListener" initializeData="C:\inetpub\logs\SSASQueryProxy\SSASQueryProxy.log" />
+      </listeners>
+    </trace>
+  </system.diagnostics>
+```
+
+Don't forget to add permissions for the application pool identity user for the target directory.
